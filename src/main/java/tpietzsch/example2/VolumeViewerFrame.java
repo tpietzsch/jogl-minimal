@@ -1,6 +1,9 @@
 package tpietzsch.example2;
 
 import bdv.TransformEventHandler;
+import bdv.ui.BdvDefaultCards;
+import bdv.ui.CardPanel;
+import bdv.ui.splitpanel.SplitPanel;
 import bdv.viewer.ConverterSetups;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
@@ -26,6 +29,10 @@ import tpietzsch.example2.VolumeViewerPanel.RenderScene;
 public class VolumeViewerFrame extends JFrame
 {
 	private final VolumeViewerPanel viewer;
+
+//	private final CardPanel cards;
+//
+//	private final SplitPanel splitPanel;
 
 	private final InputActionBindings keybindings;
 
@@ -58,6 +65,10 @@ public class VolumeViewerFrame extends JFrame
 
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
+
+//		cards = new CardPanel();
+//		BdvDefaultCards.setup( cards, viewer, setups ); // TODO
+//		splitPanel = new SplitPanel( viewer, cards );
 
 		final VolumeViewerOptions.Values options = optional.values;
 
@@ -101,6 +112,16 @@ public class VolumeViewerFrame extends JFrame
 	{
 		return viewer;
 	}
+
+//	public CardPanel getCardPanel()
+//	{
+//		return cards;
+//	}
+//
+//	public SplitPanel getSplitPanel()
+//	{
+//		return splitPanel;
+//	}
 
 	public Actions getDefaultActions()
 	{
