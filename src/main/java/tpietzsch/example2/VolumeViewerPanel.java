@@ -40,8 +40,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
@@ -1038,37 +1036,6 @@ public class VolumeViewerPanel
 			e.printStackTrace();
 		}
 		state.kill();
-	}
-
-	protected static final AtomicInteger panelNumber = new AtomicInteger( 1 );
-
-	protected static class RenderThreadFactory implements ThreadFactory
-	{
-		private final ThreadGroup threadGroup;
-
-		private final String threadNameFormat = String.format(
-				"bdv-panel-%d-thread-%%d",
-				panelNumber.getAndIncrement() );
-
-		private final AtomicInteger threadNumber = new AtomicInteger( 1 );
-
-		protected RenderThreadFactory( final ThreadGroup threadGroup )
-		{
-			this.threadGroup = threadGroup;
-		}
-
-		@Override
-		public Thread newThread( final Runnable r )
-		{
-			final Thread t = new Thread( threadGroup, r,
-					String.format( threadNameFormat, threadNumber.getAndIncrement() ),
-					0 );
-			if ( !t.isDaemon() )
-				t.setDaemon( true );
-			if ( t.getPriority() != Thread.NORM_PRIORITY )
-				t.setPriority( Thread.NORM_PRIORITY );
-			return t;
-		}
 	}
 
 	@Override
