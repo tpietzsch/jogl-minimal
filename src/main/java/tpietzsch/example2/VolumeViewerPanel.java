@@ -54,6 +54,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
 import org.jdom2.Element;
 import org.joml.Matrix4f;
+import org.scijava.listeners.Listeners;
 import tpietzsch.example2.VolumeRenderer.RepaintType;
 import tpietzsch.multires.SourceStacks;
 import tpietzsch.multires.Stack3D;
@@ -175,7 +176,7 @@ public class VolumeViewerPanel
 	 * viewer-transform. This is done <em>before</em> calling
 	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
-	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+	private final Listeners.List< TransformListener< AffineTransform3D > > transformListeners;
 
 	/**
 	 * These listeners will be notified about changes to the current timepoint
@@ -281,7 +282,7 @@ public class VolumeViewerPanel
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 
-		transformListeners = new CopyOnWriteArrayList<>();
+		transformListeners = new Listeners.SynchronizedList<>( l -> l.transformChanged( state().getViewerTransform() ) );
 		timePointListeners = new CopyOnWriteArrayList<>();
 
 		display.addComponentListener( new ComponentAdapter()
@@ -486,8 +487,7 @@ public class VolumeViewerPanel
 		}
 		case VIEWER_TRANSFORM_CHANGED:
 			final AffineTransform3D transform = state().getViewerTransform();
-			for ( final TransformListener< AffineTransform3D > l : transformListeners )
-				l.transformChanged( transform );
+			transformListeners.list.forEach( l -> l.transformChanged( transform ) );
 			requestRepaint();
 		}
 	}
@@ -731,50 +731,13 @@ public class VolumeViewerPanel
 	}
 
 	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * Add/remove {@code TransformListener}s to notify about viewer transformation
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
 	 */
-	public void addTransformListener( final TransformListener< AffineTransform3D > listener )
+	public Listeners< TransformListener< AffineTransform3D > > transformListeners()
 	{
-		addTransformListener( listener, Integer.MAX_VALUE );
-	}
-
-	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
-	 * changes. Listeners will be notified <em>before</em> calling
-	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
-	 * @param index
-	 *            position in the list of listeners at which to insert this one.
-	 */
-	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
-	{
-		synchronized ( transformListeners )
-		{
-			final int s = transformListeners.size();
-			transformListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
-			listener.transformChanged( state().getViewerTransform() );
-		}
-	}
-
-	/**
-	 * Remove a {@link TransformListener}.
-	 *
-	 * @param listener
-	 *            the transform listener to remove.
-	 */
-	public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
-	{
-		synchronized ( transformListeners )
-		{
-			transformListeners.remove( listener );
-		}
+		return transformListeners;
 	}
 
 	/**

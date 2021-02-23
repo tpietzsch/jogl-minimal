@@ -2,6 +2,7 @@ package bvv.util;
 
 import bdv.cache.CacheControl.CacheControls;
 import bdv.tools.brightness.ConverterSetup;
+import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
 import java.awt.event.WindowEvent;
@@ -12,7 +13,6 @@ import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 import tpietzsch.example2.BigVolumeViewer;
 import tpietzsch.example2.VolumeViewerFrame;
 import tpietzsch.example2.VolumeViewerOptions;
-import tpietzsch.frombdv.ManualTransformationEditor;
 
 public class BvvHandleFrame extends BvvHandle
 {

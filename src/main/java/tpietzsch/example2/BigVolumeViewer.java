@@ -2,6 +2,7 @@ package tpietzsch.example2;
 
 import static bdv.BigDataViewer.initSetups;
 
+import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerState;
@@ -48,7 +49,6 @@ import bdv.tools.transformation.ManualTransformation;
 import bdv.viewer.SourceAndConverter;
 import mpicbg.spim.data.SpimDataException;
 import org.scijava.ui.behaviour.util.Actions;
-import tpietzsch.frombdv.ManualTransformationEditor;
 import tpietzsch.scene.TexturedUnitCube;
 
 public class BigVolumeViewer
@@ -99,7 +99,7 @@ public class BigVolumeViewer
 		viewer = frame.getViewerPanel();
 
 		manualTransformation = new ManualTransformation( sources );
-		manualTransformationEditor = new ManualTransformationEditor( viewer, frame.getKeybindings() );
+		manualTransformationEditor = new ManualTransformationEditor( viewer.transformListeners(), viewer.state(), viewer::showMessage, frame.getKeybindings() );
 
 		bookmarks = new Bookmarks();
 

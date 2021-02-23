@@ -4,6 +4,7 @@ import bdv.cache.CacheControl.CacheControls;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
+import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.ui.CardPanel;
 import bdv.ui.splitpanel.SplitPanel;
 import bdv.util.BdvFunctions;
@@ -19,7 +20,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 import tpietzsch.example2.VolumeViewerPanel;
-import tpietzsch.frombdv.ManualTransformationEditor;
 
 /**
  * Represents a BigVolumeViewer frame or panel and can be used to get to the bvv
@@ -212,8 +212,7 @@ public abstract class BvvHandle implements Bvv
 				setupAssignments.removeSetup( setup );
 
 		if ( transformListeners != null )
-			for ( final TransformListener< AffineTransform3D > l : transformListeners )
-				viewer.removeTransformListener( l );
+			viewer.transformListeners().removeAll( transformListeners );
 
 		if ( timepointListeners != null )
 			for ( final TimePointListener l : timepointListeners )
