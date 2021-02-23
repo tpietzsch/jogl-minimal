@@ -633,13 +633,7 @@ public class VolumeViewerPanel
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void nextTimePoint()
 	{
-		final SynchronizedViewerState state = state();
-		synchronized ( state )
-		{
-			final int t = state.getCurrentTimepoint() + 1;
-			if ( t < state.getNumTimepoints() )
-				state.setCurrentTimepoint( t );
-		}
+		bdv.viewer.NavigationActions.nextTimePoint( state() );
 	}
 
 	/**
@@ -648,13 +642,7 @@ public class VolumeViewerPanel
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void previousTimePoint()
 	{
-		final SynchronizedViewerState state = state();
-		synchronized ( state )
-		{
-			final int t = state.getCurrentTimepoint() - 1;
-			if ( t >= 0 )
-				state.setCurrentTimepoint( t );
-		}
+		bdv.viewer.NavigationActions.previousTimePoint( state() );
 	}
 
 	/**
