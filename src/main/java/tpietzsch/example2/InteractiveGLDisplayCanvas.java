@@ -1,12 +1,14 @@
 package tpietzsch.example2;
 
 import bdv.TransformEventHandler;
+import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.awt.GLJPanel;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusListener;
@@ -18,23 +20,19 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
 import org.scijava.listeners.Listeners;
 
-/*
- * {@code InteractiveGLDisplayCanvas} has a {@code TransformEventHandler} that is notified when the component size is changed.
+/**
+ * Wraps a {@code Component} (either {@link GLJPanel} or {@link GLCanvas}) that is used to display rendered images using JOGL.
+ * <p>
+ * {@code InteractiveGLDisplay} has a {@code TransformEventHandler} that is notified when the component size is changed.
  * <p>
  * {@link #addHandler}/{@link #removeHandler} provide simplified adding/removing of handlers that implement {@code MouseListener}, {@code KeyListener}, etc.
  *
  * @author Tobias Pietzsch
  */
-public class InteractiveGLDisplayCanvas extends GLCanvas
+public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 {
 	/**
-	 * Mouse/Keyboard handler that manipulates the view transformation.
-	 */
-	private TransformEventHandler handler;
-
-	/**
-	 * Draw something to a {@link Graphics} canvas and receive notifications about
-	 * changes of the canvas size.
+	 * Receive notifications about changes of the canvas size.
 	 *
 	 * @author Tobias Pietzsch
 	 */
@@ -54,31 +52,67 @@ public class InteractiveGLDisplayCanvas extends GLCanvas
 		void setCanvasSize( int width, int height );
 	}
 
-	final private Listeners.List< CanvasSizeListener > canvasSizeListeners;
+	/**
+	 * Mouse/Keyboard handler that manipulates the view transformation.
+	 */
+	private TransformEventHandler handler;
+
+	private final C canvas;
+
+	private final Listeners.List< CanvasSizeListener > canvasSizeListeners;
 
 	/**
-	 * Create a new {@code InteractiveDisplayCanvas}.
+	 * Create a new {@code InteractiveDisplayCanvas} with a {@link GLCanvas}.
 	 *
 	 * @param width
 	 *            preferred component width.
 	 * @param height
 	 *            preferred component height.
 	 */
-	public InteractiveGLDisplayCanvas( final int width, final int height )
+	public static InteractiveGLDisplayCanvas< GLCanvas > createGLCanvas( final int width, final int height )
 	{
-		super( new GLCapabilities( GLProfile.getMaxProgrammableCore( true ) ) );
-		setPreferredSize( new Dimension( width, height ) );
-		setFocusable( true );
+		final GLCanvas canvas = new GLCanvas( new GLCapabilities( GLProfile.getMaxProgrammableCore( true ) ) );
+		return new InteractiveGLDisplayCanvas<>( canvas, width, height );
+	}
 
-		canvasSizeListeners = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( getWidth(), getHeight() ) );
+	/**
+	 * Create a new {@code InteractiveDisplayCanvas} with a {@link GLJPanel}.
+	 *
+	 * @param width
+	 *            preferred component width.
+	 * @param height
+	 *            preferred component height.
+	 */
+	public static InteractiveGLDisplayCanvas< GLJPanel > createGLJPanel( final int width, final int height )
+	{
+		final GLJPanel panel = new GLJPanel( new GLCapabilities( GLProfile.getMaxProgrammableCore( true ) ) );
 
-		addComponentListener( new ComponentAdapter()
+		// Set surface scale to 1, for performance reasons.
+		// This means we won't paint full resolution on highDPI displays.
+		panel.setSurfaceScale( new float[] { 1, 1 } );
+
+		// We flip the Y axis ourselves.
+		panel.setSkipGLOrientationVerticalFlip( true );
+
+		return new InteractiveGLDisplayCanvas<>( panel, width, height );
+	}
+
+	private InteractiveGLDisplayCanvas( final C canvas, final int width, final int height )
+	{
+		this.canvas = canvas;
+
+		canvas.setPreferredSize( new Dimension( width, height ) );
+		canvas.setFocusable( true );
+
+		canvasSizeListeners = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( canvas.getWidth(), canvas.getHeight() ) );
+
+		canvas.addComponentListener( new ComponentAdapter()
 		{
 			@Override
 			public void componentResized( final ComponentEvent e )
 			{
-				final int w = getWidth();
-				final int h = getHeight();
+				final int w = canvas.getWidth();
+				final int h = canvas.getHeight();
 				// NB: Update of canvasSizeListeners needs to happen before update of handler
 				// Otherwise repaint might start before the render target receives the size change.
 				canvasSizeListeners.list.forEach( r -> r.setCanvasSize( w, h ) );
@@ -88,12 +122,12 @@ public class InteractiveGLDisplayCanvas extends GLCanvas
 			}
 		} );
 
-		addMouseListener( new MouseAdapter()
+		canvas.addMouseListener( new MouseAdapter()
 		{
 			@Override
 			public void mousePressed( final MouseEvent e )
 			{
-				requestFocusInWindow();
+				canvas.requestFocusInWindow();
 			}
 		} );
 	}
@@ -118,19 +152,19 @@ public class InteractiveGLDisplayCanvas extends GLCanvas
 	public void addHandler( final Object h )
 	{
 		if ( h instanceof KeyListener )
-			addKeyListener( ( KeyListener ) h );
+			canvas.addKeyListener( ( KeyListener ) h );
 
 		if ( h instanceof MouseMotionListener )
-			addMouseMotionListener( ( MouseMotionListener ) h );
+			canvas.addMouseMotionListener( ( MouseMotionListener ) h );
 
 		if ( h instanceof MouseListener )
-			addMouseListener( ( MouseListener ) h );
+			canvas.addMouseListener( ( MouseListener ) h );
 
 		if ( h instanceof MouseWheelListener )
-			addMouseWheelListener( ( MouseWheelListener ) h );
+			canvas.addMouseWheelListener( ( MouseWheelListener ) h );
 
 		if ( h instanceof FocusListener )
-			addFocusListener( ( FocusListener ) h );
+			canvas.addFocusListener( ( FocusListener ) h );
 	}
 
 	/**
@@ -146,19 +180,19 @@ public class InteractiveGLDisplayCanvas extends GLCanvas
 	public void removeHandler( final Object h )
 	{
 		if ( h instanceof KeyListener )
-			removeKeyListener( ( KeyListener ) h );
+			canvas.removeKeyListener( ( KeyListener ) h );
 
 		if ( h instanceof MouseMotionListener )
-			removeMouseMotionListener( ( MouseMotionListener ) h );
+			canvas.removeMouseMotionListener( ( MouseMotionListener ) h );
 
 		if ( h instanceof MouseListener )
-			removeMouseListener( ( MouseListener ) h );
+			canvas.removeMouseListener( ( MouseListener ) h );
 
 		if ( h instanceof MouseWheelListener )
-			removeMouseWheelListener( ( MouseWheelListener ) h );
+			canvas.removeMouseWheelListener( ( MouseWheelListener ) h );
 
 		if ( h instanceof FocusListener )
-			removeFocusListener( ( FocusListener ) h );
+			canvas.removeFocusListener( ( FocusListener ) h );
 	}
 
 	/**
@@ -172,15 +206,55 @@ public class InteractiveGLDisplayCanvas extends GLCanvas
 		if ( handler != null )
 			removeHandler( handler );
 		handler = transformEventHandler;
-		int w = getWidth();
-		int h = getHeight();
+		int w = canvas.getWidth();
+		int h = canvas.getHeight();
 		if ( w <= 0 || h <= 0 )
 		{
-			final Dimension preferred = getPreferredSize();
+			final Dimension preferred = canvas.getPreferredSize();
 			w = preferred.width;
 			h = preferred.height;
 		}
 		handler.setCanvasSize( w, h, false );
 		addHandler( handler );
+	}
+
+	/**
+	 * Implementing classes extend {@link Component} and return {@code this}.
+	 */
+	public C getComponent()
+	{
+		return canvas;
+	}
+
+	// -- forwarding some panel methods for convenience --
+
+	public void addGLEventListener( GLEventListener listener)
+	{
+		canvas.addGLEventListener( listener );
+	}
+
+	public void display()
+	{
+		canvas.display();
+	}
+
+	public boolean requestFocusInWindow()
+	{
+		return canvas.requestFocusInWindow();
+	}
+
+	public int getWidth()
+	{
+		return canvas.getWidth();
+	}
+
+	public int getHeight()
+	{
+		return canvas.getHeight();
+	}
+
+	public Dimension getSize()
+	{
+		return canvas.getSize();
 	}
 }

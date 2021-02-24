@@ -97,7 +97,7 @@ public class VolumeViewerFrame extends JFrame
 		final MouseAndKeyHandler mouseAndKeyHandler = new MouseAndKeyHandler();
 		mouseAndKeyHandler.setInputMap( triggerbindings.getConcatenatedInputTriggerMap() );
 		mouseAndKeyHandler.setBehaviourMap( triggerbindings.getConcatenatedBehaviourMap() );
-		mouseAndKeyHandler.setKeypressManager( options.getKeyPressedManager(), viewer.getDisplay() );
+		mouseAndKeyHandler.setKeypressManager( options.getKeyPressedManager(), viewer.getDisplay().getComponent() );
 		viewer.getDisplay().addHandler( mouseAndKeyHandler );
 
 		// TODO: should be a field?
