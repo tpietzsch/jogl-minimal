@@ -176,6 +176,14 @@ public class OffScreenFrameBuffer
 				-1,  1, 0,     0, 1    // top left
 		};
 
+		final float verticesQuadFlipY[] = {
+				//    pos      texture
+				 1,  1, 0,     1, 0,   // top right
+				 1, -1, 0,     1, 1,   // bottom right
+				-1, -1, 0,     0, 1,   // bottom left
+				-1,  1, 0,     0, 0    // top left
+		};
+
 		final int[] tmp = new int[ 1 ];
 		gl.glGenBuffers( 1, tmp, 0 );
 		final int vboQuad = tmp[ 0 ];
