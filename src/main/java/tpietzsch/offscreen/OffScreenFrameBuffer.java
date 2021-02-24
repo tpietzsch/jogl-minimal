@@ -47,6 +47,8 @@ public class OffScreenFrameBuffer
 {
 	private final boolean withDepthAndStencil;
 
+	private final boolean flipY;
+
 	private int vaoQuad;
 
 	private final DefaultShader progQuad;
@@ -98,7 +100,7 @@ public class OffScreenFrameBuffer
 	 */
 	public OffScreenFrameBuffer( final int fbWidth, final int fbHeight, final int internalFormat )
 	{
-		this( fbWidth, fbHeight, internalFormat, false );
+		this( fbWidth, fbHeight, internalFormat, false, false );
 	}
 
 	/**
@@ -106,13 +108,15 @@ public class OffScreenFrameBuffer
 	 * @param fbHeight height of offscreen framebuffer
 	 * @param internalFormat internal texture format
 	 * @param withDepthAndStencil whether to create a render buffer for depth and stencil
+	 * @param flipY whether to flip the Y axis when {@link #drawQuad drawing the texture}
 	 */
-	public OffScreenFrameBuffer( final int fbWidth, final int fbHeight, final int internalFormat, final boolean withDepthAndStencil )
+	public OffScreenFrameBuffer( final int fbWidth, final int fbHeight, final int internalFormat, final boolean withDepthAndStencil, final boolean flipY )
 	{
 		this.fbWidth = fbWidth;
 		this.fbHeight = fbHeight;
 		this.internalFormat = internalFormat;
 		this.withDepthAndStencil = withDepthAndStencil;
+		this.flipY = flipY;
 
 		final Segment quadvp = new SegmentTemplate( OffScreenFrameBuffer.class, "osfbquad.vp" ).instantiate();
 		final Segment quadfp = new SegmentTemplate( OffScreenFrameBuffer.class, "osfbquad.fp" ).instantiate();
@@ -188,7 +192,7 @@ public class OffScreenFrameBuffer
 		gl.glGenBuffers( 1, tmp, 0 );
 		final int vboQuad = tmp[ 0 ];
 		gl.glBindBuffer( GL_ARRAY_BUFFER, vboQuad );
-		gl.glBufferData( GL_ARRAY_BUFFER, verticesQuad.length * Float.BYTES, FloatBuffer.wrap( verticesQuad ), GL.GL_STATIC_DRAW );
+		gl.glBufferData( GL_ARRAY_BUFFER, verticesQuad.length * Float.BYTES, FloatBuffer.wrap( flipY ? verticesQuadFlipY : verticesQuad ), GL.GL_STATIC_DRAW );
 		gl.glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 		final int indices[] = {

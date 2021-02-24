@@ -21,11 +21,14 @@ import java.awt.event.MouseWheelListener;
 import org.scijava.listeners.Listeners;
 
 /**
- * Wraps a {@code Component} (either {@link GLJPanel} or {@link GLCanvas}) that is used to display rendered images using JOGL.
+ * Wraps a {@code Component} (either {@link GLJPanel} or {@link GLCanvas}) that
+ * is used to display rendered images using JOGL.
  * <p>
- * {@code InteractiveGLDisplay} has a {@code TransformEventHandler} that is notified when the component size is changed.
+ * {@code InteractiveGLDisplay} has a {@code TransformEventHandler} that is
+ * notified when the component size is changed.
  * <p>
- * {@link #addHandler}/{@link #removeHandler} provide simplified adding/removing of handlers that implement {@code MouseListener}, {@code KeyListener}, etc.
+ * {@link #addHandler}/{@link #removeHandler} provide simplified adding/removing
+ * of handlers that implement {@code MouseListener}, {@code KeyListener}, etc.
  *
  * @author Tobias Pietzsch
  */
@@ -59,6 +62,8 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 
 	private final C canvas;
 
+	private final boolean yAxisFlipped;
+
 	private final Listeners.List< CanvasSizeListener > canvasSizeListeners;
 
 	/**
@@ -72,7 +77,7 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 	public static InteractiveGLDisplayCanvas< GLCanvas > createGLCanvas( final int width, final int height )
 	{
 		final GLCanvas canvas = new GLCanvas( new GLCapabilities( GLProfile.getMaxProgrammableCore( true ) ) );
-		return new InteractiveGLDisplayCanvas<>( canvas, width, height );
+		return new InteractiveGLDisplayCanvas<>( canvas, width, height, false );
 	}
 
 	/**
@@ -94,12 +99,13 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 		// We flip the Y axis ourselves.
 		panel.setSkipGLOrientationVerticalFlip( true );
 
-		return new InteractiveGLDisplayCanvas<>( panel, width, height );
+		return new InteractiveGLDisplayCanvas<>( panel, width, height, true );
 	}
 
-	private InteractiveGLDisplayCanvas( final C canvas, final int width, final int height )
+	private InteractiveGLDisplayCanvas( final C canvas, final int width, final int height, final boolean yAxisFlipped )
 	{
 		this.canvas = canvas;
+		this.yAxisFlipped = yAxisFlipped;
 
 		canvas.setPreferredSize( new Dimension( width, height ) );
 		canvas.setFocusable( true );
@@ -224,6 +230,11 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 	public C getComponent()
 	{
 		return canvas;
+	}
+
+	public boolean yAxisFlipped()
+	{
+		return yAxisFlipped;
 	}
 
 	// -- forwarding some panel methods for convenience --
