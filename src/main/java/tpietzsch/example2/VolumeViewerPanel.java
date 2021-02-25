@@ -5,6 +5,7 @@ import bdv.TransformState;
 import bdv.cache.CacheControl;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.util.Affine3DHelpers;
+import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
@@ -19,6 +20,7 @@ import bdv.viewer.ViewerStateChange;
 import bdv.viewer.ViewerStateChangeListener;
 import bdv.viewer.VisibilityAndGrouping;
 import bdv.viewer.animate.AbstractTransformAnimator;
+import bdv.viewer.animate.OverlayAnimator;
 import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.PainterThread;
@@ -53,6 +55,7 @@ import net.imglib2.util.LinAlgHelpers;
 import org.jdom2.Element;
 import org.joml.Matrix4f;
 import org.scijava.listeners.Listeners;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import tpietzsch.example2.VolumeRenderer.RepaintType;
 import tpietzsch.multires.SourceStacks;
 import tpietzsch.multires.Stack3D;
@@ -69,7 +72,7 @@ import static tpietzsch.example2.VolumeRenderer.RepaintType.NONE;
 import static tpietzsch.example2.VolumeRenderer.RepaintType.SCENE;
 
 public class VolumeViewerPanel
-		extends JPanel
+		extends AbstractViewerPanel
 		implements RequestRepaint, PainterThread.Paintable, ViewerStateChangeListener
 {
 	protected final CacheControl cacheControl;
@@ -210,7 +213,7 @@ public class VolumeViewerPanel
 			final RenderScene renderScene,
 			final VolumeViewerOptions optional )
 	{
-		super( new BorderLayout() );
+		super( new BorderLayout(), false );
 
 		options = optional.values;
 		final boolean useGLJPanel = true; // TODO should come from VolumeViewerOptions
@@ -493,46 +496,6 @@ public class VolumeViewerPanel
 		}
 	}
 
-	private final static double c = Math.cos( Math.PI / 4 );
-
-	/**
-	 * The planes which can be aligned with the viewer coordinate system: XY,
-	 * ZY, and XZ plane.
-	 */
-	public enum AlignPlane
-	{
-		XY( "XY", 2, new double[] { 1, 0, 0, 0 } ),
-		ZY( "ZY", 0, new double[] { c, 0, -c, 0 } ),
-		XZ( "XZ", 1, new double[] { c, c, 0, 0 } );
-
-		private final String name;
-
-		public String getName()
-		{
-			return name;
-		}
-
-		/**
-		 * rotation from the xy-plane aligned coordinate system to this plane.
-		 */
-		private final double[] qAlign;
-
-		/**
-		 * Axis index. The plane spanned by the remaining two axes will be
-		 * transformed to the same plane by the computed rotation and the
-		 * "rotation part" of the affine source transform.
-		 * @see Affine3DHelpers#extractApproximateRotationAffine(AffineTransform3D, double[], int)
-		 */
-		private final int coerceAffineDimension;
-
-		private AlignPlane( final String name, final int coerceAffineDimension, final double[] qAlign )
-		{
-			this.name = name;
-			this.coerceAffineDimension = coerceAffineDimension;
-			this.qAlign = qAlign;
-		}
-	}
-
 	/**
 	 * Align the XY, ZY, or XZ plane of the local coordinate system of the
 	 * currently active source with the viewer coordinate system.
@@ -540,6 +503,7 @@ public class VolumeViewerPanel
 	 * @param plane
 	 *            to which plane to align.
 	 */
+	@Override
 	protected synchronized void align( final AlignPlane plane )
 	{
 		final Source< ? > source = state().getCurrentSource().getSpimSource();
@@ -1034,5 +998,40 @@ public class VolumeViewerPanel
 	public boolean requestFocusInWindow()
 	{
 		return display.requestFocusInWindow();
+	}
+
+
+
+
+	// ======== AbstractViewerPanel ======
+
+	@Override
+	public InputTriggerConfig getInputTriggerConfig()
+	{
+		return options.getInputTriggerConfig();
+	}
+
+	@Override
+	public void addOverlayAnimator( final OverlayAnimator animator )
+	{
+		System.out.println( "VolumeViewerPanel.addOverlayAnimator" );
+		System.out.println( "  animator = " + animator );
+		System.out.println( "  TODO" );
+	}
+
+	@Override
+	public Listeners< TransformListener< AffineTransform3D > > renderTransformListeners()
+	{
+		System.out.println( "VolumeViewerPanel.renderTransformListeners" );
+		System.out.println( "  TODO" );
+		return transformListeners();
+	}
+
+	@Override
+	public void getMouseCoordinates( final Positionable p )
+	{
+		System.out.println( "VolumeViewerPanel.getMouseCoordinates" );
+		System.out.println( "  p = " + p );
+		System.out.println( "  TODO" );
 	}
 }
