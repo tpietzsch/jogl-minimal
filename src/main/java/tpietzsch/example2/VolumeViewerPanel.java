@@ -198,6 +198,14 @@ public class VolumeViewerPanel
 	private final Listeners.List< TransformListener< AffineTransform3D > > transformListeners;
 
 	/**
+	 * These listeners will be notified about the transform that is associated
+	 * to the currently rendered image. This is intended for example for
+	 * {@link OverlayRenderer}s that need to exactly match the transform of
+	 * their overlaid content to the transform of the image.
+	 */
+	private final Listeners.List< TransformListener< AffineTransform3D > > renderTransformListeners;
+
+	/**
 	 * These listeners will be notified about changes to the current timepoint
 	 * {@link ViewerState#getCurrentTimepoint()}. This is done <em>before</em>
 	 * calling {@link #requestRepaint()} so listeners have the chance to
@@ -320,6 +328,10 @@ public class VolumeViewerPanel
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 
 		transformListeners = new Listeners.SynchronizedList<>( l -> l.transformChanged( state().getViewerTransform() ) );
+		renderTransformListeners = new Listeners.SynchronizedList<>( l -> {
+			if ( renderData != null )
+				l.transformChanged( renderData.getRenderTransformWorldToScreen() );
+		} );
 		timePointListeners = new CopyOnWriteArrayList<>();
 
 		msgOverlay = options.getMsgOverlay();
@@ -337,7 +349,6 @@ public class VolumeViewerPanel
 				display.getComponent().removeComponentListener( this );
 			}
 		} );
-		display.canvasSizeListeners().add( this::setScreenSize ); // TODO: this could be done via setCanvasSize() because we implement OVerlayRenderer
 
 		state.getState().changeListeners().add( this );
 
@@ -560,10 +571,6 @@ public class VolumeViewerPanel
 		if ( requiresRepaint )
 			getDisplayComponent().repaint();
 	}
-
-	@Override
-	public void setCanvasSize( final int width, final int height )
-	{}
 
 	@Override
 	public void viewerStateChanged( final ViewerStateChange change )
@@ -801,6 +808,17 @@ public class VolumeViewerPanel
 	}
 
 	/**
+	 * Add/remove {@code TransformListener}s to notify about viewer transformation
+	 * changes. Listeners will be notified when a new image is painted with the viewer
+	 * transform used to render that image.
+	 */
+	@Override
+	public Listeners< TransformListener< AffineTransform3D > > renderTransformListeners()
+	{
+		return renderTransformListeners;
+	}
+
+	/**
 	 * Add a {@link TimePointListener} to notify about time-point
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
@@ -886,6 +904,12 @@ public class VolumeViewerPanel
 		this.maxAllowedStepInVoxels = maxAllowedStepInVoxels;
 	}
 
+	@Override
+	public void setCanvasSize( final int width, final int height )
+	{
+		setScreenSize( width, height );
+	}
+
 	private void setScreenSize(final double screenWidth, final double screenHeight)
 	{
 		this.screenWidth = screenWidth;
@@ -942,6 +966,7 @@ public class VolumeViewerPanel
 			if ( type == FULL )
 			{
 				setRenderState();
+				renderTransformListeners.list.forEach( l -> l.transformChanged( renderData.getRenderTransformWorldToScreen() ) );
 			}
 
 			if ( type == FULL || type == SCENE )
@@ -1036,15 +1061,5 @@ public class VolumeViewerPanel
 			e.printStackTrace();
 		}
 		state.kill();
-	}
-
-	// ======== AbstractViewerPanel ======
-
-	@Override
-	public Listeners< TransformListener< AffineTransform3D > > renderTransformListeners()
-	{
-		System.out.println( "VolumeViewerPanel.renderTransformListeners" );
-		System.out.println( "  TODO" );
-		return transformListeners();
 	}
 }
