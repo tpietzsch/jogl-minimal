@@ -4,6 +4,7 @@ import static bdv.BigDataViewer.initSetups;
 
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.viewer.ConverterSetups;
+import bdv.viewer.NavigationActions;
 import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerState;
 import com.jogamp.opengl.GL3;
@@ -155,7 +156,7 @@ public class BigVolumeViewer
 		} );
 
 		final Actions actions = frame.getDefaultActions();
-		NavigationActions.install( actions, viewer );
+		NavigationActions.install( actions, viewer, false );
 		actions.namedAction( new ToggleDialogAction( "toggle brightness dialog", brightnessDialog ), "S" );
 		actions.namedAction( new ToggleDialogAction( "toggle active sources dialog", activeSourcesDialog ), "F6" );
 		actions.runnableAction( manualTransformationEditor::toggle, "toggle manual transformation", "T" );

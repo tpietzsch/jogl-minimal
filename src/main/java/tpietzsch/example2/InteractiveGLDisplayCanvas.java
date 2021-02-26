@@ -1,14 +1,20 @@
 package tpietzsch.example2;
 
 import bdv.TransformEventHandler;
+import bdv.viewer.InteractiveDisplay;
+import bdv.viewer.InteractiveDisplayCanvas;
+import bdv.viewer.OverlayRenderer;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLCapabilitiesImmutable;
 import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.awt.GLJPanel;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusListener;
@@ -18,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
+import java.util.function.Consumer;
 import org.scijava.listeners.Listeners;
 
 /**
@@ -32,7 +39,7 @@ import org.scijava.listeners.Listeners;
  *
  * @author Tobias Pietzsch
  */
-public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
+public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable > implements InteractiveDisplay
 {
 	/**
 	 * Receive notifications about changes of the canvas size.
@@ -60,6 +67,11 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 	 */
 	private TransformEventHandler handler;
 
+	/**
+	 * To draw this component, {@link OverlayRenderer#drawOverlays} is invoked for each renderer.
+	 */
+	private final Listeners.List< OverlayRenderer > overlayRenderers;
+
 	private final C canvas;
 
 	private final boolean yAxisFlipped;
@@ -80,6 +92,30 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 		return new InteractiveGLDisplayCanvas<>( canvas, width, height, false );
 	}
 
+	static class MyGLJPanel extends GLJPanel
+	{
+		private Consumer< Graphics > onPaintComponent;
+
+		public MyGLJPanel( final GLCapabilitiesImmutable userCapsRequest ) throws GLException
+		{
+			super( userCapsRequest );
+
+			// Set surface scale to 1, for performance reasons.
+			// This means we won't paint full resolution on highDPI displays.
+			setSurfaceScale( new float[] { 1, 1 } );
+
+			// We flip the Y axis ourselves. Don't make the GLJPanel do it.
+			setSkipGLOrientationVerticalFlip( true );
+		}
+
+		@Override
+		public void paintComponent( final Graphics g )
+		{
+			super.paintComponent( g );
+			onPaintComponent.accept( g );
+		}
+	}
+
 	/**
 	 * Create a new {@code InteractiveDisplayCanvas} with a {@link GLJPanel}.
 	 *
@@ -90,16 +126,11 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 	 */
 	public static InteractiveGLDisplayCanvas< GLJPanel > createGLJPanel( final int width, final int height )
 	{
-		final GLJPanel panel = new GLJPanel( new GLCapabilities( GLProfile.getMaxProgrammableCore( true ) ) );
+		final MyGLJPanel panel = new MyGLJPanel( new GLCapabilities( GLProfile.getMaxProgrammableCore( true ) ) );
 
-		// Set surface scale to 1, for performance reasons.
-		// This means we won't paint full resolution on highDPI displays.
-		panel.setSurfaceScale( new float[] { 1, 1 } );
-
-		// We flip the Y axis ourselves.
-		panel.setSkipGLOrientationVerticalFlip( true );
-
-		return new InteractiveGLDisplayCanvas<>( panel, width, height, true );
+		final InteractiveGLDisplayCanvas< GLJPanel > canvas = new InteractiveGLDisplayCanvas<>( panel, width, height, true );
+		panel.onPaintComponent = canvas::paintOverlays;
+		return canvas;
 	}
 
 	private InteractiveGLDisplayCanvas( final C canvas, final int width, final int height, final boolean yAxisFlipped )
@@ -111,6 +142,7 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 		canvas.setFocusable( true );
 
 		canvasSizeListeners = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( canvas.getWidth(), canvas.getHeight() ) );
+		overlayRenderers = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( canvas.getWidth(), canvas.getHeight() ) );
 
 		canvas.addComponentListener( new ComponentAdapter()
 		{
@@ -119,8 +151,9 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 			{
 				final int w = canvas.getWidth();
 				final int h = canvas.getHeight();
-				// NB: Update of canvasSizeListeners needs to happen before update of handler
+				// NB: Update of overlayRenderers needs to happen before update of handler
 				// Otherwise repaint might start before the render target receives the size change.
+				overlayRenderers.list.forEach( r -> r.setCanvasSize( w, h ) );
 				canvasSizeListeners.list.forEach( r -> r.setCanvasSize( w, h ) );
 				if ( handler != null )
 					handler.setCanvasSize( w, h, true );
@@ -144,6 +177,17 @@ public class InteractiveGLDisplayCanvas< C extends Component & GLAutoDrawable >
 	public Listeners< CanvasSizeListener > canvasSizeListeners()
 	{
 		return canvasSizeListeners;
+	}
+
+	@Override
+	public Listeners< OverlayRenderer > overlays()
+	{
+		return overlayRenderers;
+	}
+
+	private void paintOverlays( final Graphics g )
+	{
+		overlayRenderers.list.forEach( r -> r.drawOverlays( g ) );
 	}
 
 	/**

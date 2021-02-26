@@ -30,6 +30,8 @@ package tpietzsch.example2;
 
 import bdv.TransformEventHandler3D;
 import bdv.TransformEventHandlerFactory;
+import bdv.viewer.ViewerOptions;
+import bdv.viewer.animate.MessageOverlayAnimator;
 import java.awt.event.KeyListener;
 import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
@@ -249,6 +251,12 @@ public class VolumeViewerOptions
 		return this;
 	}
 
+	public VolumeViewerOptions msgOverlay( final MessageOverlayAnimator o )
+	{
+		values.msgOverlay = o;
+		return this;
+	}
+
 	public VolumeViewerOptions transformEventHandlerFactory( final TransformEventHandlerFactory f )
 	{
 		values.transformEventHandlerFactory = f;
@@ -306,6 +314,7 @@ public class VolumeViewerOptions
 		private double maxAllowedStepInVoxels = 1.0;
 
 		private int numSourceGroups = 10;
+		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 		private TransformEventHandlerFactory transformEventHandlerFactory = TransformEventHandler3D::new;
 		private InputTriggerConfig inputTriggerConfig = null;
 		private KeyPressedManager keyPressedManager = null;
@@ -327,6 +336,7 @@ public class VolumeViewerOptions
 					dClipFar( dClipFar ).
 					maxAllowedStepInVoxels( maxAllowedStepInVoxels ).
 					numSourceGroups( numSourceGroups ).
+					msgOverlay( msgOverlay ).
 					transformEventHandlerFactory( transformEventHandlerFactory ).
 					inputTriggerConfig( inputTriggerConfig ).
 					shareKeyPressedEvents( keyPressedManager );
@@ -400,6 +410,11 @@ public class VolumeViewerOptions
 		public int getNumSourceGroups()
 		{
 			return numSourceGroups;
+		}
+
+		public MessageOverlayAnimator getMsgOverlay()
+		{
+			return msgOverlay;
 		}
 
 		public TransformEventHandlerFactory getTransformEventHandlerFactory()
