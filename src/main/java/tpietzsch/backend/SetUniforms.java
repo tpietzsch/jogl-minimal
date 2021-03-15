@@ -42,6 +42,14 @@ public interface SetUniforms
 
 	void setUniform4i( final String name, final int v0, final int v1, final int v2, final int v3 );
 
+	void setUniform1iv( final String name, final int count, final int[] value );
+
+	void setUniform2iv( final String name, final int count, final int[] value );
+
+	void setUniform3iv( final String name, final int count, final int[] value );
+
+	void setUniform4iv( final String name, final int count, final int[] value );
+
 	void setUniform1f( final String name, final float v0 );
 
 	void setUniform2f( final String name, final float v0, final float v1 );
@@ -55,6 +63,8 @@ public interface SetUniforms
 	void setUniform2fv( final String name, final int count, final float[] value );
 
 	void setUniform3fv( final String name, final int count, final float[] value );
+
+	void setUniform4fv( final String name, final int count, final float[] value );
 
 	// transpose==true: data is in row-major order
 	void setUniformMatrix3f( final String name, final boolean transpose, final FloatBuffer value );

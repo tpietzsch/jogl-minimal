@@ -29,16 +29,23 @@
 package tpietzsch.example2;
 
 import bdv.tools.brightness.ConverterSetup;
+
+import java.lang.Math;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import net.imglib2.type.numeric.ARGBType;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
+import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.joml.Vector4f;
+import org.joml.Vector4i;
 import tpietzsch.backend.GpuContext;
 import tpietzsch.backend.Texture;
 import tpietzsch.backend.Texture2D;
@@ -327,6 +334,26 @@ public class MultiVolumeShaderMip
 		volumeSegments[ index ].putSampler( prog, name, texture );
 	}
 
+	public void setCustomUniformForVolume( int index, String name, Object value )
+	{
+	    volumeSegments[ index ].additionalUniforms.put( name, value );
+	}
+
+	public void removeCustomUniformForVolume( int index, String name )
+	{
+		volumeSegments[ index ].additionalUniforms.remove( name );
+	}
+
+	public void setCustomIntArrayUniformForVolume( int index, String name, final int elementSize, final int[] value ) {
+		final AbstractMap.SimpleEntry<Integer, int[]> entry = new AbstractMap.SimpleEntry<Integer, int[]>(elementSize, value);
+		volumeSegments[ index ].additionalUniforms.put( name, entry );
+	}
+
+	public void setCustomFloatArrayUniformForVolume( int index, String name, final int elementSize, final float[] value ) {
+		final AbstractMap.SimpleEntry<Integer, float[]> entry = new AbstractMap.SimpleEntry<Integer, float[]>(elementSize, value);
+		volumeSegments[ index ].additionalUniforms.put( name, entry );
+	}
+
 	public void setVolume( int index, VolumeBlocks volume )
 	{
 		final VolumeSignature vs = signature.getVolumeSignatures().get( index );
@@ -509,6 +536,8 @@ public class MultiVolumeShaderMip
 
 		private final HashMap< String, AdditionalSampler > additionalSamplers = new HashMap<>();
 
+		private final HashMap< String, Object > additionalUniforms = new HashMap<>();
+
 		public VolumeSegment( final Segment volume )
 		{
 			this.volume = volume;
@@ -529,6 +558,75 @@ public class MultiVolumeShaderMip
 		{
 			additionalSamplers.values().forEach( AdditionalSampler::setTexture );
 		}
+
+		void setAdditionalUniforms(SegmentedShader prog)
+		{
+			additionalUniforms.forEach( (name, value) -> {
+				if(value instanceof Integer) {
+					prog.getUniform1i( volume, name).set((int)value);
+				} else if(value instanceof Float) {
+					prog.getUniform1f( volume, name).set((float) value);
+				} else if(value instanceof Vector2f) {
+					prog.getUniform2f( volume, name).set((Vector2f)value);
+				} else if(value instanceof Vector3f) {
+					prog.getUniform3f( volume, name).set((Vector3f)value);
+				} else if(value instanceof Vector4f) {
+					prog.getUniform4f( volume, name).set((Vector4f)value);
+				} else if(value instanceof Matrix3f) {
+					prog.getUniformMatrix3f( volume, name).set((Matrix3f)value);
+				} else if(value instanceof Matrix4f) {
+					prog.getUniformMatrix4f( volume, name).set((Matrix4f)value);
+				} else if(value instanceof Vector2i) {
+					prog.getUniform2i( volume, name).set(((Vector2i) value).x, ((Vector2i) value).y);
+				} else if(value instanceof Vector3i) {
+					prog.getUniform3i( volume, name).set(((Vector3i) value).x, ((Vector3i) value).y, ((Vector3i) value).z);
+				} else if(value instanceof Vector4i) {
+					prog.getUniform4i( volume, name).set(((Vector4i) value).x, ((Vector4i) value).y, ((Vector4i) value).z, ((Vector4i) value).w);
+				} else if(value instanceof AbstractMap.SimpleEntry && ((AbstractMap.SimpleEntry<?, ?>) value).getValue().getClass().getComponentType() == float.class) {
+					final Integer elementSize = (Integer) (((AbstractMap.SimpleEntry<?, ?>) value).getKey());
+					final float[] array = ((float[])((AbstractMap.SimpleEntry<?, ?>) value).getValue());
+
+					switch (elementSize) {
+						case 1:
+							prog.getUniform1fv( volume, name ).set( array );
+							break;
+						case 2:
+							prog.getUniform2fv( volume, name ).set( array );
+							break;
+						case 3:
+							prog.getUniform3fv( volume, name ).set( array );
+							break;
+						case 4:
+							prog.getUniform4fv( volume, name ).set( array );
+							break;
+						default:
+							throw new UnsupportedOperationException("Uniform array element size not supported: " + elementSize);
+					}
+				} else if(value instanceof AbstractMap.SimpleEntry && ((AbstractMap.SimpleEntry<?, ?>) value).getValue().getClass().getComponentType() == int.class) {
+					final Integer elementSize = (Integer)(((AbstractMap.SimpleEntry<?, ?>) value).getKey());
+					final int[] array = ((int[])((AbstractMap.SimpleEntry<?, ?>) value).getValue());
+
+					switch (elementSize) {
+						case 1:
+							prog.getUniform1iv( volume, name ).set( array );
+							break;
+						case 2:
+							prog.getUniform2iv( volume, name ).set( array );
+							break;
+						case 3:
+							prog.getUniform3iv( volume, name ).set( array );
+							break;
+						case 4:
+							prog.getUniform4iv( volume, name ).set( array );
+							break;
+						default:
+							throw new UnsupportedOperationException("Uniform array element size not supported: " + elementSize);
+					}
+				} else {
+					throw new UnsupportedOperationException("Object type " + value.getClass().getCanonicalName() + " is not usable for uniforms.");
+				}
+			});
+		}
 	}
 
 	static class VolumeBlocksSegment extends VolumeSegment
@@ -540,10 +638,12 @@ public class MultiVolumeShaderMip
 		private final UniformMatrix4f uniformIm;
 		private final Uniform3f uniformSourcemin;
 		private final Uniform3f uniformSourcemax;
+		private final SegmentedShader shader;
 
 		public VolumeBlocksSegment( final SegmentedShader prog, final Segment volume )
 		{
 			super( volume );
+			shader = prog;
 			uniformBlockScales = prog.getUniform3fv( volume, "blockScales" );
 			uniformLutSampler = prog.getUniformSampler( volume, "lutSampler" );
 			uniformLutSize = prog.getUniform3f( volume, "lutSize" );
@@ -551,6 +651,7 @@ public class MultiVolumeShaderMip
 			uniformIm = prog.getUniformMatrix4f( volume, "im" );
 			uniformSourcemin = prog.getUniform3f( volume, "sourcemin" );
 			uniformSourcemax = prog.getUniform3f( volume, "sourcemax" );
+
 		}
 
 		public void setData( VolumeBlocks blocks )
@@ -565,6 +666,7 @@ public class MultiVolumeShaderMip
 			uniformSourcemax.set( blocks.getSourceLevelMax() );
 
 			setAdditionalSamplers();
+			setAdditionalUniforms(shader);
 		}
 
 	}
@@ -574,13 +676,16 @@ public class MultiVolumeShaderMip
 		private final UniformSampler uniformVolumeSampler;
 		private final UniformMatrix4f uniformIm;
 		private final Uniform3f uniformSourcemax;
+		private final SegmentedShader shader;
 
 		public VolumeSimpleSegment( final SegmentedShader prog, final Segment volume )
 		{
 			super( volume );
+			shader = prog;
 			uniformVolumeSampler = prog.getUniformSampler( volume, "volume" );
 			uniformIm = prog.getUniformMatrix4f( volume, "im" );
 			uniformSourcemax = prog.getUniform3f( volume, "sourcemax" );
+
 		}
 
 		public void setData( SimpleVolume volume )
@@ -590,6 +695,7 @@ public class MultiVolumeShaderMip
 			uniformSourcemax.set( volume.getSourceMax() );
 
 			setAdditionalSamplers();
+			setAdditionalUniforms(shader);
 		}
 	}
 }

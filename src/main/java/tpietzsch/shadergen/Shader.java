@@ -40,6 +40,14 @@ public interface Shader
 
 	Uniform4i getUniform4i( final String key );
 
+	Uniform1iv getUniform1iv( final String key );
+
+	Uniform2iv getUniform2iv( final String key );
+
+	Uniform3iv getUniform3iv( final String key );
+
+	Uniform4iv getUniform4iv( final String key );
+
 	Uniform1f getUniform1f( final String key );
 
 	Uniform2f getUniform2f( final String key );
@@ -53,6 +61,8 @@ public interface Shader
 	Uniform2fv getUniform2fv( final String key );
 
 	Uniform3fv getUniform3fv( final String key );
+
+	Uniform4fv getUniform4fv( final String key );
 
 	UniformMatrix3f getUniformMatrix3f( final String key );
 

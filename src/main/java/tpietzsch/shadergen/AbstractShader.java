@@ -93,6 +93,30 @@ public abstract class AbstractShader implements Shader
 	}
 
 	@Override
+	public Uniform1iv getUniform1iv( final String key )
+	{
+		return getUniform( getUniqueName( key ), UniformImp1iv.class, UniformImp1iv::new );
+	}
+
+	@Override
+	public Uniform3iv getUniform3iv( final String key )
+	{
+		return getUniform( getUniqueName( key ), UniformImp3iv.class, UniformImp3iv::new );
+	}
+
+	@Override
+	public Uniform2iv getUniform2iv( final String key )
+	{
+		return getUniform( getUniqueName( key ), UniformImp2iv.class, UniformImp2iv::new );
+	}
+
+	@Override
+	public Uniform4iv getUniform4iv( final String key )
+	{
+		return getUniform( getUniqueName( key ), UniformImp4iv.class, UniformImp4iv::new );
+	}
+
+	@Override
 	public Uniform1f getUniform1f( final String key )
 	{
 		return getUniform( getUniqueName( key ), UniformImp1f.class, UniformImp1f::new );
@@ -132,6 +156,12 @@ public abstract class AbstractShader implements Shader
 	public Uniform2fv getUniform2fv( final String key )
 	{
 		return getUniform( getUniqueName( key ), UniformImp2fv.class, UniformImp2fv::new );
+	}
+
+	@Override
+	public Uniform4fv getUniform4fv( final String key )
+	{
+		return getUniform( getUniqueName( key ), UniformImp4fv.class, UniformImp4fv::new );
 	}
 
 	@Override
@@ -378,6 +408,103 @@ public abstract class AbstractShader implements Shader
 		}
 	}
 
+	static class UniformImp1iv extends UniformImp implements Uniform1iv
+	{
+		private int[] v;
+
+		public UniformImp1iv( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		void setInShader( final SetUniforms visitor )
+		{
+			if ( v != null )
+				visitor.setUniform1iv( name, v.length, v );
+		}
+
+		@Override
+		public synchronized void set( final int[] value )
+		{
+			this.v = value.clone();
+			modified = true;
+		}
+	}
+
+	static class UniformImp2iv extends UniformImp implements Uniform2iv
+	{
+		private int[] v;
+
+		public UniformImp2iv( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		void setInShader( final SetUniforms visitor )
+		{
+			if ( v != null )
+				visitor.setUniform2iv( name, v.length, v );
+		}
+
+		@Override
+		public synchronized void set( final int[] value )
+		{
+			this.v = value.clone();
+			modified = true;
+		}
+	}
+
+	static class UniformImp3iv extends UniformImp implements Uniform3iv
+	{
+		private int[] v;
+
+		public UniformImp3iv( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		void setInShader( final SetUniforms visitor )
+		{
+			if ( v != null )
+				visitor.setUniform3iv( name, v.length, v );
+		}
+
+		@Override
+		public synchronized void set( final int[] value )
+		{
+			this.v = value.clone();
+			modified = true;
+		}
+	}
+
+	static class UniformImp4iv extends UniformImp implements Uniform4iv
+	{
+		private int[] v;
+
+		public UniformImp4iv( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		void setInShader( final SetUniforms visitor )
+		{
+			if ( v != null )
+				visitor.setUniform4iv( name, v.length, v );
+		}
+
+		@Override
+		public synchronized void set( final int[] value )
+		{
+			this.v = value.clone();
+			modified = true;
+		}
+	}
+
+
 	static class UniformImp1f extends UniformImp implements Uniform1f
 	{
 		private float v0;
@@ -556,6 +683,30 @@ public abstract class AbstractShader implements Shader
 		{
 			if ( v != null )
 				visitor.setUniform3fv( name, v.length / 3, v );
+		}
+
+		@Override
+		public synchronized void set( final float[] value )
+		{
+			this.v = value.clone();
+			modified = true;
+		}
+	}
+
+	static class UniformImp4fv extends UniformImp implements Uniform4fv
+	{
+		private float[] v;
+
+		public UniformImp4fv( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		void setInShader( final SetUniforms visitor )
+		{
+			if ( v != null )
+				visitor.setUniform4fv( name, v.length / 4, v );
 		}
 
 		@Override
