@@ -67,8 +67,8 @@
 		<url>https://github.com/tpietzsch/jogl-minimal/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.org/tpietzsch/jogl-minimal</url>
+		<system>GitHub Actions</system>
+		<url>https://github.com/tpietzsch/jogl-minimal/actions</url>
 	</ciManagement>
 
 	<properties>
@@ -82,7 +82,7 @@
 		<ST4.version>4.0.8</ST4.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
-		<releaseProfiles>deploy-to-scijava</releaseProfiles>
+		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 	</properties>
 
 	<repositories>
